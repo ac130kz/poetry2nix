@@ -2228,6 +2228,29 @@ lib.composeManyExtensions [
             ++ [ self.ruamel-yaml-clib ];
         }
       );
+      
+      ruff =
+        let
+          getRepoHash = version: {
+            "0.0.254" = "sha256-61Yw4YWolMZbi9nqDdkSH4UxIpPxUO4Aq44ABXZxMbU=";
+          }.${version};
+          sha256 = getRepoHash super.ruff.version;
+        in
+        super.ruff.overridePythonAttrs (old: rec {
+          src = pkgs.fetchFromGitHub {
+            owner = "charliermarsh";
+            repo = "ruff";
+            rev = "v${old.version}";
+            inherit sha256;
+          };
+          cargoDeps = pkgs.rustPlatform.importCargoLock {
+            lockFile = "${src.out}/Cargo.lock";
+          };
+          nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+            pkgs.rustPlatform.cargoSetupHook
+            pkgs.rustPlatform.maturinBuildHook
+          ];
+        });
 
       scipy = super.scipy.overridePythonAttrs (
         old:
